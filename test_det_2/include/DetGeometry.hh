@@ -34,6 +34,8 @@ public:
     void SetNewSize(G4double newSize);
     G4String material_name = "G4_C";
     G4double R_size = 5;
+    G4double d_cont, d_det, l_cont, l_det;
+    G4double det_X, det_Y, det_Z;
 };
 
 #endif //TEMPLATE_DETGEOMETRY_HH

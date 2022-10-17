@@ -3,6 +3,7 @@
 #include "map"
 #include "CommandMessenger.hh"
 #include "DetGeometry.hh"
+#include "G4Timer.hh"
 
 using namespace std;
 
@@ -10,12 +11,14 @@ RunAct::RunAct(DetGeometry*det,PrimaryGen*gen):G4UserRunAction(),fGen(gen),fDete
 
 {
     result = new std::map<G4double, G4int>;
+    result2 = new std::map<G4double, G4int>;
     runactMessenger = new RunActMessenger(this);
 }
 
 RunAct::~RunAct()
 {
     delete result;
+    delete result2;
     delete runactMessenger;
 }
 
@@ -23,7 +26,16 @@ void RunAct::BeginOfRunAction(const G4Run *aRun)
 {
     result->clear();
     for (int i=0; i <n_of_Bins; i++)
-    result->insert(std::pair<G4double, G4int> (i *Emax / n_of_Bins, 0));
+        result->insert(std::pair<G4double, G4int> (i *Emax / n_of_Bins, 0));
+
+    result2->clear();
+    for (int i=0; i <n_of_Bins; i++)
+        result2->insert(std::pair<G4double, G4int> (i *Nmax / n_of_Bins, 0));
+
+    if (isMaster)
+    {
+        Time = G4Timer().GetClockTime();
+    }
 }
 
 
@@ -35,32 +47,50 @@ void RunAct::EndOfRunAction(const G4Run *aRun)
         G4MUTEXLOCK(&myMutex);
 
         static auto test = new double[n_of_Bins]();
-
         for (int i = 0; i < n_of_Bins; i++) {
             test[i] += result->at(i * Emax / n_of_Bins);
+        }
+
+        static auto test2 = new double[n_of_Bins]();
+
+        for (int i = 0; i < n_of_Bins; i++) {
+            test2[i] += result2->at(i * Nmax / n_of_Bins);
         }
 
         static double num = 0;
         num++;
         if (num == G4Threading::GetNumberOfRunningWorkerThreads()) {
             stringstream res_out_mutex;
-            res_out_mutex << "../res/Raw_Res.txt";
-            std::ofstream myFile(res_out_mutex.str(), ios::out);
+            stringstream res_out_mutex2;
+            stringstream res_out_mutex3;
+            res_out_mutex << "../res/Deposited Energy.txt";
+            res_out_mutex2 << "../res/Photons Counter.txt";
+            res_out_mutex3 << "../res/Photons Counter Energy For Neutron " << fGen->U << " MeV.txt";
 
+            std::ofstream myFile(res_out_mutex.str(), ios::out);
             for (int i = 0; i < n_of_Bins; i++) {
                 myFile << i * Emax / n_of_Bins << '\t' << test[i] << endl;
                 test[i] = 0;
             }
+
+            std::ofstream myFile2(res_out_mutex2.str(), ios::out);
+            for (int i = 0; i < n_of_Bins; i++) {
+                myFile2 << i * Nmax / n_of_Bins << '\t' << test2[i] << endl;
+            }
+
+            std::ofstream myFile3(res_out_mutex3.str(), ios::out);
+            for (int i = 0; i < n_of_Bins; i++) {
+                myFile3 << i*2*9.871e-4 - 7.97e-5 << '\t' << test2[i] << endl;
+                test2[i] = 0;
+            }
+
             num = 0;
         }
         G4MUTEXUNLOCK(&myMutex);
     }
 
-    if(isMaster)
+    if (isMaster)
     {
-        stringstream res_out_mutex;
-        res_out_mutex << "../res/Raw_Res.txt";
-
         auto P = new double *[n_of_Bins];
         for (int i = 0; i < n_of_Bins; i++) {
             P[i] = new double[n_of_Bins]();}
@@ -79,7 +109,7 @@ void RunAct::EndOfRunAction(const G4Run *aRun)
         nrm2 = 0;
 
         ifstream read_1;
-        read_1.open(res_out_mutex.str());
+        read_1.open("../res/Deposited Energy.txt");
         for (int i = 0; i < n_of_Bins; i++) {
             read_1 >> E >> Cnt;
             EnergyScale[i] = E;
@@ -93,9 +123,7 @@ void RunAct::EndOfRunAction(const G4Run *aRun)
         double delta = EnergyScale[10]-EnergyScale[9];
 
         for (int i=0; i<n_of_Bins; i++)
-        {Sigma[i] = 0.1405*(sqrt(EnergyScale[i]))/sqrt(1000);}
-//        {Sigma[i] = 0.7025*(sqrt(EnergyScale[i]))/sqrt(1000);}
-
+        {Sigma[i] = 2.55*(sqrt(13.1*3*EnergyScale[i]))/1000;}
 
         for (int i = 0; i < n_of_Bins; i++)
         {
@@ -128,9 +156,7 @@ void RunAct::EndOfRunAction(const G4Run *aRun)
             Counts_norm[i]=(nrm1/nrm2)*Counts_pre[i];
         }
 
-        stringstream res_out_norm;
-        res_out_norm << "../res/Norm_Res.txt";
-        fstream fout_norm(res_out_norm.str(), ios::out);
+        fstream fout_norm("../res/Deposited Energy Norm.txt", ios::out);
         for (int i = 0; i < n_of_Bins; i++)
         {
             if(Counts_norm[i]<1E-10)
@@ -142,12 +168,21 @@ void RunAct::EndOfRunAction(const G4Run *aRun)
         for (int i = 0; i < n_of_Bins; i++) { delete[] P[i]; }
         delete [] EnergyScale; delete [] Counts; delete [] Counts_norm;
         delete [] Counts_pre;  delete [] Sigma;
+
+        G4cout << "Start time is: " << Time << endl;
+        G4cout << "End time is: " << G4Timer().GetClockTime() << endl;
     }
 }
 
 void RunAct::AddEvent(G4double energy)
 {
     auto it = result->lower_bound(energy);
+    it->second++;
+}
+
+void RunAct::AddEvent2(G4double photons)
+{
+    auto it = result2->lower_bound(photons);
     it->second++;
 }
 

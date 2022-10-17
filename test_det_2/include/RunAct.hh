@@ -24,15 +24,19 @@ public:
     void EndOfRunAction(const G4Run *aRun);
 
     void AddEvent(G4double energy);
+    void AddEvent2(G4double photons);
 
-    int n_of_Bins = 10000;
-    G4double Emax = 5.0*MeV;
+    int n_of_Bins = 4000;
+    G4double Emax = 10;
+    G4double Nmax = 4000;
 
     void SetNewResPath(G4String newPath);
     G4String foldername = "../res/New_Name Of_The_Output_File.txt";
+    G4String Time;
 
 private:
     std::map <G4double, G4int> *result;
+    std::map <G4double, G4int> *result2;
     RunActMessenger*runactMessenger;
     PrimaryGen*fGen;
     DetGeometry*fDetector;

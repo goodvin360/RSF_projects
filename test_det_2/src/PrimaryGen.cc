@@ -15,7 +15,7 @@ PrimaryGen::PrimaryGen(DetGeometry*det):fDetector(det)
     primarygenmessenger = new PrimaryGenMessenger(this);
 
     gun = new G4ParticleGun();
-//    gun->SetParticleDefinition(G4Gamma::Gamma());
+    gun->SetParticleDefinition(G4Gamma::Gamma());
 //    gun->SetParticleDefinition(G4Geantino::Geantino());
 
     gun->SetNumberOfParticles(1);
@@ -24,7 +24,7 @@ PrimaryGen::PrimaryGen(DetGeometry*det):fDetector(det)
 
 #ifdef SingleEnergy
     //    gun->SetParticleEnergy(U*MeV);
-      gun->SetParticleEnergy(0*MeV);
+      gun->SetParticleEnergy(0.661*MeV);
 #endif
 
 #ifdef OuterSpectra
@@ -106,7 +106,7 @@ void PrimaryGen::GeneratePrimaries(G4Event* anEvent)
     //Am241
 //    G4ParticleDefinition* ion = G4IonTable::GetIonTable()->GetIon(95,241,0);
     //Ba133
-    G4ParticleDefinition* ion = G4IonTable::GetIonTable()->GetIon(56,133,0);
+//    G4ParticleDefinition* ion = G4IonTable::GetIonTable()->GetIon(56,133,0);
     //Na22
 //    G4ParticleDefinition* ion = G4IonTable::GetIonTable()->GetIon(11,22,0);
     //Cs137
@@ -115,16 +115,9 @@ void PrimaryGen::GeneratePrimaries(G4Event* anEvent)
 //    G4ParticleDefinition* ion = G4IonTable::GetIonTable()->GetIon(27,60,0);
     //Bi207
 //    G4ParticleDefinition* ion = G4IonTable::GetIonTable()->GetIon(84,207,0);
-    gun->SetParticleDefinition(ion);
+//    gun->SetParticleDefinition(ion);
 
-    G4double R=5;
-    G4double cosTheta1 = 2*G4UniformRand()-1., phi1 = twopi*G4UniformRand();
-    G4double sinTheta1 = std::sqrt(1. - cosTheta1*cosTheta1);
-    G4double ux = R*sinTheta1*std::sin(phi1),
-            uy = 15+R*cosTheta1,
-            uz = 5*(2*G4UniformRand()-1);
-//    gun->SetParticlePosition(G4ThreeVector(ux*cm,uz*cm,uy*cm));
-    gun->SetParticlePosition(G4ThreeVector(0*cm,0*cm,13.7*cm));
+    gun->SetParticlePosition(G4ThreeVector(0*cm,0*cm,10*cm));
 
 
     double dX, dY, dZ;
@@ -137,6 +130,7 @@ void PrimaryGen::GeneratePrimaries(G4Event* anEvent)
     dX = sinTheta*std::cos(phi),
     dY = sinTheta*std::sin(phi),
     dZ = cosTheta;
+//    gun->SetParticleMomentumDirection(G4ThreeVector(0, 0, -1));
     gun->SetParticleMomentumDirection(G4ThreeVector(dX, dY, dZ));
 
     gun->GeneratePrimaryVertex(anEvent);

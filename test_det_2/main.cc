@@ -18,6 +18,7 @@
 #include "G4RadioactiveDecayPhysics.hh"
 #include "G4EmStandardPhysics_option4.hh"
 #include "QBBC.hh"
+#include "G4OpticalPhysics.hh"
 
 using namespace std;
 
@@ -55,6 +56,10 @@ int main(int argc, char** argv) {
 //    G4ParticleHPManager::GetInstance()->SetUseOnlyPhotoEvaporation( true );
 //    G4ParticleHPManager::GetInstance()->SetProduceFissionFragments( true );
 //    G4ParticleHPManager::GetInstance()->SetUseWendtFissionModel( true );
+    G4OpticalPhysics*optPhys = new G4OpticalPhysics();
+    optPhys->SetScintillationByParticleType(true);
+    optPhys->SetCerenkovStackPhotons(false);
+    Phys->RegisterPhysics(optPhys);
     runManager->SetUserInitialization(Phys);
     runManager->SetUserInitialization(new ActionInit(detGeom));
     runManager->Initialize();
